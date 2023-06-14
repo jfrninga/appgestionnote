@@ -1,43 +1,71 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import NoteList from '../src/components/NoteList';
+import NoteForm from '../src/components/NoteForm';
+import NoteEditor from '../src/components/NoteEditor';
 import './App.css';
 
-function App() {
-	const [count, setCount] = useState(0);
-	const [quote, setQuote] = useState('');
+const App = () => {
+	const [notes, setNotes] = useState([
+		{
+			id: 1,
+			title: 'Test Note',
+			note: 5,
+			comment: 'Test Comment',
+			createdAt: new Date().toLocaleString(),
+		},
+	]);
+	const [selectedNote, setSelectedNote] = useState(null);
 
-	const getKaamelottQuote = async () => {
-		const quote = await axios.get('https://kaamelott.reiter.tf/quote/random');
-		setQuote(quote.data.citation);
+	useEffect(() => {
+		const savedNotes = JSON.parse(localStorage.getItem('notes'));
+		if (savedNotes) {
+			setNotes(savedNotes);
+		}
+	}, []);
+
+	useEffect(() => {
+		localStorage.setItem('notes', JSON.stringify(notes));
+	}, [notes]);
+
+	const addNote = (newNote) => {
+		setNotes([...notes, newNote]);
+	};
+
+	const updateNote = (updatedNote) => {
+		const updatedNotes = notes.map((note) =>
+			note.id === updatedNote.id ? updatedNote : note
+		);
+		setNotes(updatedNotes);
+		setSelectedNote(null);
+	};
+
+	const deleteNote = (noteId) => {
+		const updatedNotes = notes.filter((note) => note.id !== noteId);
+		setNotes(updatedNotes);
+		setSelectedNote(null);
+	};
+
+	const handleNoteClick = (note) => {
+		setSelectedNote(note);
 	};
 
 	return (
-		<>
-			<div>
-				<a href="https://vitejs.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo" />
-				</a>
-			</div>
-			<h1 data-testid="quote">{quote ? quote : 'Vite + React'}</h1>
-			<div className="card">
-				<button data-testid="bouton-count" onClick={() => setCount((count) => count + 1)}>
-					count is {count}
-				</button>
-				<button data-testid="bouton-fetch" onClick={getKaamelottQuote}>
-					Get random kaamelott quote
-				</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-		</>
+		<div>
+			<h1>Note Manager</h1>
+			{selectedNote ? (
+				<NoteEditor
+					note={selectedNote}
+					onUpdateNote={updateNote}
+					onDeleteNote={deleteNote}
+				/>
+			) : (
+				<div>
+					<NoteForm onAddNote={addNote} />
+					<NoteList notes={notes} onNoteClick={handleNoteClick} />
+				</div>
+			)}
+		</div>
 	);
-}
+};
 
 export default App;
